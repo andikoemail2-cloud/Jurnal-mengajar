@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurnal Mengajar - Bahasa Jawa</title>
+    
+    <!-- Tailwind CSS (Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Libraries for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- SweetAlert2 (Notifications) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background-color: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .card {
+                box-shadow: none !important;
+                border: none !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse;
+                font-size: 10pt;
+            }
+            th, td {
+                border: 1px solid #000 !important;
+                padding: 5px !important;
+            }
+            /* Ensure header shows in print */
+            #header-section {
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid black;
+                padding-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Navbar / Header -->
+    <header id="header-section" class="bg-teal-700 text-white shadow-lg p-6">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0 text-center md:text-left">
+                <h1 class="text-2xl font-bold tracking-wide"><i class="fas fa-book-open mr-2"></i>JURNAL MENGAJAR</h1>
+                <p class="text-teal-100 font-medium mt-1">Mata Pelajaran: Bahasa Jawa</p>
+            </div>
+            <div class="text-center md:text-right bg-teal-800 p-3 rounded-lg border border-teal-600">
+                <p class="text-xs text-teal-200 uppercase tracking-wider">Guru Pengampu</p>
+                <p class="font-bold text-lg">Andiko Irawan H P, S.Pd</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6">
+        
+        <!-- Navigation Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6 no-print">
+            <button onclick="switchView('journal')" id="btn-journal" class="flex-1 md:flex-none px-6 py-2 rounded-lg font-semibold bg-teal-600 text-white shadow-md transition">
+                <i class="fas fa-edit mr-2"></i> Input Jurnal
+            </button>
+            <button onclick="switchView('tp')" id="btn-tp" class="flex-1 md:flex-none px-6 py-2 rounded-lg font-semibold bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 shadow-sm transition">
+                <i class="fas fa-list-check mr-2"></i> Manajemen TP
+            </button>
+        </div>
+
+        <!-- SECTION: MANAJEMEN TP -->
+        <div id="view-tp" class="hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Form Input TP -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-indigo-500">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-4"><i class="fas fa-plus-circle mr-2 text-indigo-600"></i>Tambah TP Baru</h2>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Jenjang Kelas</label>
+                            <select id="tp_grade_input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" onchange="renderTpList()">
+                                <option value="2">Kelas 2 (Max 8 TP)</option>
+                                <option value="3">Kelas 3 (Max 8 TP)</option>
+                                <option value="4">Kelas 4 (Max 8 TP)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Isi Tujuan Pembelajaran (TP)</label>
+                            <textarea id="tp_text_input" rows="4" placeholder="Paste teks TP di sini..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">Copy-paste kalimat TP lengkap di sini.</p>
+                        </div>
+
+                        <button onclick="saveTp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition">
+                            <i class="fas fa-save mr-2"></i> Simpan TP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- List TP -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-indigo-500 h-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold text-gray-700">Daftar TP Tersimpan</h2>
+                            <span id="tp_count_badge" class="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded border border-indigo-200">0 / 8</span>
+                        </div>
+                        
+                        <div class="overflow-y-auto max-h-[500px]">
+                            <ul id="tp_list_container" class="space-y-3">
+                                <!-- List items rendered via JS -->
+                            </ul>
+                            <div id="tp_empty_state" class="text-center py-8 text-gray-400 hidden">
+                                <i class="fas fa-clipboard-list text-4xl mb-2"></i>
+                                <p>Belum ada TP untuk kelas ini.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: INPUT JURNAL (Main) -->
+        <div id="view-journal">
+            <!-- Form Section -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8 no-print border-t-4 border-teal-500">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 class="text-xl font-semibold text-gray-700"><i class="fas fa-edit mr-2 text-teal-600"></i>Input Jurnal Harian</h2>
+                    <button onclick="resetForm()" class="text-sm text-gray-500 hover:text-red-500 transition"><i class="fas fa-undo mr-1"></i> Reset Form</button>
+                </div>
+
+                <form id="journalForm" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="editIndex" value="-1">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Tanggal & Hari -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                            <input type="date" id="tanggal" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition" onchange="updateDay()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hari</label>
+                            <input type="text" id="hari" readonly class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed">
+                        </div>
+
+                        <!-- Kelas -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                            <select id="kelas" required onchange="updateTpDropdown()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition">
+                                <option value="">-- Pilih Kelas --</option>
+                                <optgroup label="Kelas 2">
+                                    <option value="2A">2A</option><option value="2B">2B</option><option value="2C">2C</option><option value="2D">2D</option>
+                                </optgroup>
+                                <optgroup label="Kelas 3">
+                                    <option value="3A">3A</option><option value="3B">3B</option><option value="3C">3C</option><option value="3D">3D</option>
+                                </optgroup>
+                                <optgroup label="Kelas 4">
+                                    <option value="4A">4A</option><option value="4B">4B</option><option value="4C">4C</option><option value="4D">4D</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- Jenis Penilaian -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Penilaian / Kegiatan</label>
+                            <div class="relative">
+                                <select id="penilaian" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition appearance-none">
+                                    <option value="KBM Biasa">KBM Biasa</option>
+                                    <option value="Penilaian Harian">Penilaian Harian</option>
+                                    <option value="Praktik">Praktik</option>
+                                    <option value="Tertulis">Tertulis</option>
+                                    <option value="Observasi">Observasi</option>
+                                    <option value="Proyek">Proyek</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tujuan Pembelajaran (UPDATED to DROPDOWN) -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Tujuan Pembelajaran (TP)
+                                <span class="text-xs text-indigo-600 font-normal ml-2 cursor-pointer hover:underline" onclick="switchView('tp')"><i class="fas fa-external-link-alt"></i> Kelola TP</span>
+                            </label>
+                            <select id="tujuan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition bg-white">
+                                <option value="">-- Pilih Kelas Terlebih Dahulu --</option>
+                            </select>
+                            <p id="tp_helper_text" class="text-xs text-gray-500 mt-1">Pilih kelas untuk memuat daftar TP.</p>
+                        </div>
+
+                        <!-- Materi -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Materi Pembelajaran</label>
+                            <textarea id="materi" rows="3" required placeholder="Rincian materi yang diajarkan..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"></textarea>
+                        </div>
+
+                        <!-- Refleksi -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Refleksi / Catatan Tambahan</label>
+                            <input type="text" id="refleksi" placeholder="Catatan tentang keaktifan siswa atau kendala..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-8 flex flex-col md:flex-row gap-3">
+                        <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition duration-200 flex justify-center items-center">
+                            <i class="fas fa-save mr-2"></i> Simpan Data Jurnal
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Data Section -->
+            <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-gray-500">
+                <!-- Toolbar -->
+                <div class="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4 no-print">
+                    <h2 class="text-xl font-semibold text-gray-700">Riwayat Jurnal</h2>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        <!-- Search -->
+                        <div class="relative flex-grow">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </span>
+                            <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari materi, kelas..." class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        
+                        <!-- Export Buttons -->
+                        <div class="flex gap-2">
+                            <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center shadow">
+                                <i class="fas fa-file-excel mr-2"></i> Excel
+                            </button>
+                            <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center shadow">
+                                <i class="fas fa-file-pdf mr-2"></i> PDF
+                            </button>
+                            <button onclick="printPage()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center shadow">
+                                <i class="fas fa-print mr-2"></i> Cetak
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <table class="w-full text-sm text-left text-gray-600" id="journalTable">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Hari/Tgl</th>
+                                <th scope="col" class="px-6 py-3">Kelas</th>
+                                <th scope="col" class="px-6 py-3">Materi</th>
+                                <th scope="col" class="px-6 py-3">Tujuan (TP)</th>
+                                <th scope="col" class="px-6 py-3">Jenis</th>
+                                <th scope="col" class="px-6 py-3">Refleksi</th>
+                                <th scope="col" class="px-6 py-3 text-center no-print" width="100">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Data will be injected here via JS -->
+                        </tbody>
+                    </table>
+                    <div id="emptyState" class="hidden text-center py-8">
+                        <i class="fas fa-folder-open text-4xl text-gray-300 mb-2"></i>
+                        <p class="text-gray-500">Belum ada data jurnal.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-12 mb-6 text-center text-gray-500 text-sm no-print">
+        <p>&copy; 2024 Jurnal Mengajar - Andiko Irawan H P, S.Pd</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- State Management ---
+        let journalData = JSON.parse(localStorage.getItem('journalData_Jawa')) || [];
+        
+        // Initial TP Data structure (2, 3, 4)
+        const defaultTpData = { "2": [], "3": [], "4": [] };
+        let tpData = JSON.parse(localStorage.getItem('tpData_Jawa')) || defaultTpData;
+
+        // Constraints - Max 8 TP per kelas
+        const TP_LIMITS = { "2": 8, "3": 8, "4": 8 };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+            renderTpList(); // Init TP list
+            
+            // Set today's date by default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tanggal').value = today;
+            updateDay();
+        });
+
+        // --- Navigation Logic ---
+        function switchView(viewName) {
+            const journalView = document.getElementById('view-journal');
+            const tpView = document.getElementById('view-tp');
+            const btnJournal = document.getElementById('btn-journal');
+            const btnTp = document.getElementById('btn-tp');
+
+            if (viewName === 'journal') {
+                journalView.classList.remove('hidden');
+                tpView.classList.add('hidden');
+                
+                // Style updates
+                btnJournal.className = "flex-1 md:flex-none px-6 py-2 rounded-lg font-semibold bg-teal-600 text-white shadow-md transition";
+                btnTp.className = "flex-1 md:flex-none px-6 py-2 rounded-lg font-semibold bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 shadow-sm transition";
+                
+                // Refresh dropdown in case changes were made
+                updateTpDropdown(); 
+            } else {
+                journalView.classList.add('hidden');
+                tpView.classList.remove('hidden');
+
+                // Style updates
+                btnTp.className = "flex-1 md:flex-none px-6 py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow-md transition";
+                btnJournal.className = "flex-1 md:flex-none px-6 py-2 rounded-lg font-semibold bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 shadow-sm transition";
+                
+                renderTpList(); // Refresh list
+            }
+        }
+
+        // --- TP MANAGEMENT FUNCTIONS ---
+
+        function saveTp() {
+            const grade = document.getElementById('tp_grade_input').value;
+            const text = document.getElementById('tp_text_input').value.trim();
+
+            if (!text) {
+                Swal.fire('Error', 'Teks TP tidak boleh kosong.', 'error');
+                return;
+            }
+
+            // Init array if not exists (defensive)
+            if (!tpData[grade]) tpData[grade] = [];
+
+            // Check Limits
+            if (tpData[grade].length >= TP_LIMITS[grade]) {
+                Swal.fire('Batas Penuh', `Maksimal ${TP_LIMITS[grade]} TP untuk Kelas ${grade}. Silakan hapus TP lama jika ingin menambah baru.`, 'warning');
+                return;
+            }
+
+            // Save
+            tpData[grade].push(text);
+            localStorage.setItem('tpData_Jawa', JSON.stringify(tpData));
+            
+            document.getElementById('tp_text_input').value = ''; // Reset input
+            renderTpList();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Tersimpan',
+                text: 'TP berhasil ditambahkan.',
+                timer: 1000,
+                showConfirmButton: false
+            });
+        }
+
+        function renderTpList() {
+            const grade = document.getElementById('tp_grade_input').value;
+            const listContainer = document.getElementById('tp_list_container');
+            const badge = document.getElementById('tp_count_badge');
+            const emptyState = document.getElementById('tp_empty_state');
+
+            // Set safe default
+            const currentTps = tpData[grade] || [];
+            
+            // Update Badge
+            badge.innerText = `${currentTps.length} / ${TP_LIMITS[grade]}`;
+            
+            listContainer.innerHTML = '';
+
+            if (currentTps.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                currentTps.forEach((tp, index) => {
+                    const li = document.createElement('li');
+                    li.className = "bg-gray-50 p-3 rounded-lg border border-gray-200 flex justify-between items-start group hover:border-indigo-300 transition";
+                    li.innerHTML = `
+                        <div class="flex-1 pr-4">
+                            <span class="inline-block bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mb-1">TP ${index + 1}</span>
+                            <p class="text-sm text-gray-700 leading-snug">${tp}</p>
+                        </div>
+                        <button onclick="deleteTp('${grade}', ${index})" class="text-gray-400 hover:text-red-500 transition p-1" title="Hapus TP">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    listContainer.appendChild(li);
+                });
+            }
+        }
+
+        function deleteTp(grade, index) {
+            Swal.fire({
+                title: 'Hapus TP?',
+                text: "TP ini akan dihapus dari daftar.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    tpData[grade].splice(index, 1);
+                    localStorage.setItem('tpData_Jawa', JSON.stringify(tpData));
+                    renderTpList();
+                }
+            });
+        }
+
+        // --- JOURNAL INTEGRATION FUNCTIONS ---
+
+        function updateTpDropdown(selectedTpValue = null) {
+            const kelasVal = document.getElementById('kelas').value;
+            const tujuanSelect = document.getElementById('tujuan');
+            const helperText = document.getElementById('tp_helper_text');
+
+            tujuanSelect.innerHTML = ''; // Clear options
+
+            if (!kelasVal) {
+                tujuanSelect.innerHTML = '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>';
+                helperText.innerText = "Pilih kelas untuk memuat daftar TP.";
+                return;
+            }
+
+            // Extract grade from "2A" -> "2"
+            const grade = kelasVal.charAt(0);
+            const availableTps = tpData[grade] || [];
+
+            if (availableTps.length === 0) {
+                tujuanSelect.innerHTML = '<option value="">-- Data TP Kosong (Input di Menu Manajemen) --</option>';
+                helperText.innerHTML = '<span class="text-red-500 font-medium"><i class="fas fa-exclamation-circle"></i> TP untuk kelas ini belum diinput. Silakan buka menu Manajemen TP.</span>';
+            } else {
+                tujuanSelect.innerHTML = '<option value="">-- Pilih Tujuan Pembelajaran --</option>';
+                availableTps.forEach(tp => {
+                    const option = document.createElement('option');
+                    option.value = tp;
+                    // Truncate for display but keep value full
+                    option.text = tp.length > 90 ? tp.substring(0, 90) + '...' : tp;
+                    tujuanSelect.appendChild(option);
+                });
+                helperText.innerText = `${availableTps.length} TP tersedia untuk Kelas ${grade}.`;
+            }
+
+            // If editing or re-populating, re-select the value
+            if (selectedTpValue) {
+                // Check if the old TP still exists in the list? 
+                // Even if not, we can force add it as an option if needed, 
+                // but standard behavior is to let it default or match existing.
+                // Here we try to match:
+                tujuanSelect.value = selectedTpValue;
+                
+                // If the TP was deleted from management but exists in this journal entry, 
+                // it won't be selected because it's not in the options. 
+                // Optional: Add it as a temporary option? 
+                if (tujuanSelect.value === "" && selectedTpValue !== "") {
+                     const option = document.createElement('option');
+                     option.value = selectedTpValue;
+                     option.text = selectedTpValue + " (TP Terhapus/Arsip)";
+                     option.selected = true;
+                     tujuanSelect.appendChild(option);
+                }
+            }
+        }
+
+        function updateDay() {
+            const dateInput = document.getElementById('tanggal').value;
+            if (!dateInput) return;
+
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const date = new Date(dateInput);
+            const dayName = days[date.getDay()];
+            document.getElementById('hari').value = dayName;
+        }
+
+        function formatDateID(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        }
+
+        // --- Core Journal Functions ---
+        
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            // Get Values
+            const id = document.getElementById('editIndex').value;
+            const tanggal = document.getElementById('tanggal').value;
+            const hari = document.getElementById('hari').value;
+            const kelas = document.getElementById('kelas').value;
+            const tujuan = document.getElementById('tujuan').value; // Now a dropdown value
+            const materi = document.getElementById('materi').value;
+            const penilaian = document.getElementById('penilaian').value;
+            const refleksi = document.getElementById('refleksi').value;
+
+            // Validasi TP
+            if (!tujuan) {
+                Swal.fire('Validasi Gagal', 'Silakan pilih Tujuan Pembelajaran (TP). Jika daftar kosong, input dulu di menu Manajemen TP.', 'warning');
+                return;
+            }
+
+            const newData = {
+                id: Date.now(), // unique ID
+                tanggal,
+                hari,
+                kelas,
+                tujuan,
+                materi,
+                penilaian,
+                refleksi
+            };
+
+            if (id === "-1") {
+                // Create New
+                journalData.push(newData);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Data jurnal berhasil disimpan.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                // Update Existing
+                journalData[parseInt(id)] = newData;
+                document.getElementById('editIndex').value = "-1";
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Diperbarui!',
+                    text: 'Data jurnal berhasil diupdate.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+
+            // Save & Render
+            saveToLocalStorage();
+            renderTable();
+            resetForm();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('journalData_Jawa', JSON.stringify(journalData));
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('tableBody');
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const emptyState = document.getElementById('emptyState');
+            
+            tableBody.innerHTML = '';
+
+            // Filter data based on search
+            const filteredData = journalData.filter(item => 
+                item.kelas.toLowerCase().includes(searchInput) ||
+                item.materi.toLowerCase().includes(searchInput) ||
+                item.tujuan.toLowerCase().includes(searchInput) ||
+                item.tanggal.includes(searchInput)
+            );
+
+            // Sort by Date (newest first)
+            filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+            if (filteredData.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                filteredData.forEach((item, index) => {
+                    // Find original index in main array for editing
+                    const originalIndex = journalData.indexOf(item);
+                    
+                    const row = `
+                        <tr class="bg-white border-b hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${formatDateID(item.tanggal)}</div>
+                                <div class="text-xs text-gray-500">${item.hari}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="bg-teal-100 text-teal-800 text-xs font-medium px-2.5 py-0.5 rounded border border-teal-200">${item.kelas}</span>
+                            </td>
+                            <td class="px-6 py-4 max-w-xs truncate text-gray-700" title="${item.materi}">
+                                ${item.materi}
+                            </td>
+                            <td class="px-6 py-4 max-w-xs truncate text-gray-500" title="${item.tujuan}">
+                                ${item.tujuan}
+                            </td>
+                            <td class="px-6 py-4 text-gray-600">
+                                ${item.penilaian}
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 italic text-xs">
+                                ${item.refleksi || '-'}
+                            </td>
+                            <td class="px-6 py-4 text-center no-print">
+                                <div class="flex justify-center space-x-2">
+                                    <button onclick="editData(${originalIndex})" class="text-blue-600 hover:text-blue-900" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteData(${originalIndex})" class="text-red-600 hover:text-red-900" title="Hapus">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+        }
+
+        function deleteData(index) {
+            Swal.fire({
+                title: 'Hapus Data?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    journalData.splice(index, 1);
+                    saveToLocalStorage();
+                    renderTable();
+                    Swal.fire('Terhapus!', 'Data jurnal telah dihapus.', 'success')
+                }
+            })
+        }
+
+        function editData(index) {
+            const data = journalData[index];
+            
+            // Switch to journal view if currently in TP view
+            switchView('journal');
+
+            document.getElementById('editIndex').value = index;
+            document.getElementById('tanggal').value = data.tanggal;
+            document.getElementById('hari').value = data.hari;
+            
+            // Set Kelas First
+            document.getElementById('kelas').value = data.kelas;
+            
+            // Important: Trigger updateTpDropdown to populate options, THEN set value
+            // This ensures if the TP exists in the list, it gets selected.
+            // If it was deleted from the management list, custom logic in updateTpDropdown adds it as an option.
+            updateTpDropdown(data.tujuan); 
+            
+            document.getElementById('materi').value = data.materi;
+            document.getElementById('penilaian').value = data.penilaian;
+            document.getElementById('refleksi').value = data.refleksi;
+
+            // Scroll to form
+            document.querySelector('header').scrollIntoView({ behavior: 'smooth' });
+            
+            // Highlight form
+            const formCard = document.querySelector('form').parentElement;
+            formCard.classList.add('ring-2', 'ring-teal-400');
+            setTimeout(() => formCard.classList.remove('ring-2', 'ring-teal-400'), 2000);
+        }
+
+        function resetForm() {
+            document.getElementById('journalForm').reset();
+            document.getElementById('editIndex').value = "-1";
+            // Reset Date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tanggal').value = today;
+            updateDay();
+            // Reset dropdown TP
+            updateTpDropdown();
+        }
+
+        // --- Export Functions ---
+
+        function printPage() {
+            window.print();
+        }
+
+        function exportToExcel() {
+            if (journalData.length === 0) {
+                Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
+                return;
+            }
+
+            const excelData = journalData.map((item, index) => ({
+                "No": index + 1,
+                "Hari": item.hari,
+                "Tanggal": item.tanggal,
+                "Kelas": item.kelas,
+                "Tujuan Pembelajaran": item.tujuan,
+                "Materi": item.materi,
+                "Penilaian": item.penilaian,
+                "Refleksi": item.refleksi
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+
+            const wscols = [
+                {wch: 5}, {wch: 10}, {wch: 15}, {wch: 10}, 
+                {wch: 40}, {wch: 30}, {wch: 15}, {wch: 20}
+            ];
+            ws['!cols'] = wscols;
+
+            XLSX.utils.book_append_sheet(wb, ws, "Jurnal Mengajar");
+            XLSX.writeFile(wb, "Jurnal_Mengajar_Bahasa_Jawa.xlsx");
+        }
+
+        function exportToPDF() {
+            if (journalData.length === 0) {
+                Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+
+            doc.setFontSize(16);
+            doc.text("JURNAL MENGAJAR - BAHASA JAWA", 14, 15);
+            doc.setFontSize(12);
+            doc.text("Guru: Andiko Irawan H P, S.Pd", 14, 22);
+            
+            const tableColumn = ["Hari/Tgl", "Kelas", "Tujuan Pembelajaran", "Materi", "Penilaian", "Refleksi"];
+            const tableRows = [];
+
+            journalData.forEach(item => {
+                const rowData = [
+                    `${item.hari}, ${item.tanggal}`,
+                    item.kelas,
+                    item.tujuan,
+                    item.materi,
+                    item.penilaian,
+                    item.refleksi
+                ];
+                tableRows.push(rowData);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 30,
+                styles: { fontSize: 9, cellPadding: 2 },
+                headStyles: { fillColor: [13, 148, 136] }, 
+                columnStyles: {
+                    0: { cellWidth: 25 },
+                    1: { cellWidth: 15 },
+                    2: { cellWidth: 80 }, // Wider for TP
+                }
+            });
+
+            doc.save("Jurnal_Mengajar_Bahasa_Jawa.pdf");
+        }
+    </script>
+</body>
+</html>
